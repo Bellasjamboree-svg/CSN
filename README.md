@@ -3,8 +3,8 @@ import oscP5.*;
 import netP5.*; 
 
 int numtracks = 35; 
-wigBtn[] buttons = new wigBtn[numtracks]; 
-wigVis vis; 
+Btn[] buttons = new Btn[numtracks]; 
+Vis vis; 
 float[] vuL = new float[100]; //allow up to 100 tracks 
 float[] vuR = new float[100]; //allow up to 100 tracks 
 //oscP5 library is a class.  Make a variable of this type   
@@ -28,7 +28,7 @@ void setup() {
    for(int i=0;i<buttons.length;i++) 
      buttons[i] = new wigBtn(10+i*25,20,20); 
   sendOSC("/device/track/count",numtracks);      
-  vis = new wigVis(numtracks); 
+  vis = new Vis(numtracks); 
 } 
 
 void draw() { 
@@ -125,6 +125,83 @@ void sendOSC(String s,int i)
 void sendOSC(String s) 
 {   
 
-    OscMessage myMessage = new OscMessage(s);     
+    OscMessage myMessage = new OscMessage(s);    
+    
     oscP5.send(myMessage,Reaper); 
+} 
+class Vis { 
+
+  int numchannels; 
+  float vumin = 0.2; 
+  Vis() 
+  { 
+    numchannels = 8; 
+  }   
+  Vis(int _numch) 
+  { 
+    numchannels = _numch;   
+  } 
+  void draw(float[] _vuL, float x, float y, float scale, 
+   color _line,color _fill) 
+  { 
+    pushMatrix();              // store current canvas state (position) 
+    translate(x, y);           // translate screen position 
+    rotate(frameCount / 200.0);
+    fill(_fill); 
+    stroke(_line); 
+    float angle = TWO_PI / numchannels; 
+    beginShape(); 
+    int b = 0; 
+    for (float a = 0; a < TWO_PI; a += angle)  
+    { 
+      float sx = cos(a) * (_vuL[b]+vumin) * scale; 
+      float sy = sin(a) * (_vuL[b]+vumin) * scale; 
+      vertex(sx, sy); 
+      b++; 
+    } 
+    endShape(CLOSE);      
+    popMatrix();      // put canvas state back to where it was  
+  } 
+} 
+class Btn { 
+
+  int x,y,size; 
+  color onc,offc; 
+  color currentc; 
+  boolean btnon; 
+  boolean confirmedstate; 
+  Btn(int _x,int _y,int _size) 
+  { 
+
+    x = _x; 
+    y = _y; 
+    size = _size;   
+    onc = 128; 
+    offc = 255;  
+    btnon = false; 
+    confirmedstate = false; 
+  }   
+
+  void draw()   { 
+    stroke(128); 
+    if(confirmedstate) 
+       fill(onc); 
+    else 
+       fill(offc); 
+     rect(x,y,size,size);    
+  } 
+  boolean togglebtn() 
+  { 
+    //check to see if button was pressed, if it was, return true so the  
+    //sketch can send the state of the button to Reaper,  
+    //return false otherwise 
+    if(mousePressed && mouseX > x && mouseX < x+size && mouseY > y && mouseY < y+size) 
+    { 
+
+       btnon = !btnon; 
+       return true; 
+    } 
+
+    return false; 
+  } 
 } 
